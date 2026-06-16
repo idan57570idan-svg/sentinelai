@@ -1,0 +1,57 @@
+# SentinelAI Configuration
+# Copy .env.example to .env and fill in your keys
+
+agent:
+  name: SentinelAI
+  version: "1.0.0"
+  chain: BSC
+  competition: BNB_HACK_2026
+
+# Trading loop settings
+loop:
+  cycle_interval_seconds: 300    # 5 minutes between cycles
+  start_portfolio_value_usd: 100.0
+  dry_run: false
+
+# Multi-agent model assignments
+models:
+  orchestrator: claude-opus-4-8          # strategic coordinator
+  market_intel: claude-sonnet-4-6        # CMC analysis + signal gen
+  risk_guard:   claude-sonnet-4-6        # risk management + sizing
+  security_audit: claude-haiku-4-5-20251001  # fast contract scan
+  execution:    claude-haiku-4-5-20251001    # TWAK execution
+
+# Guardrail configuration
+guardrails:
+  max_drawdown_pct: 25.0          # stop trading at 25% drawdown (comp limit 30%)
+  per_trade_max_pct: 5.0          # max 5% of portfolio per trade
+  per_trade_min_usd: 5.0
+  per_trade_max_usd: 500.0
+  daily_loss_limit_pct: 8.0
+  max_open_positions: 10
+  min_token_volume_24h_usd: 50000.0
+  max_slippage_pct: 1.5
+  cool_down_seconds: 60
+  honeypot_score_limit: 30        # block tokens with honeypot score > 30
+
+# Security audit settings
+audit:
+  run_honeypot_rules: true
+  run_vulnerability_rules: true
+  cache_ttl_seconds: 3600         # re-audit contracts every 1 hour
+
+# Competition contract (BNB Hack)
+competition:
+  contract_address: "0x212c61b9b72c95d95bf29cf032f5e5635629aed5"
+  chain: BSC
+  min_trades_per_day: 1
+  trading_window_start: "2026-06-22"
+  trading_window_end: "2026-06-28"
+
+# External APIs
+twak:
+  mode: "cli"                     # "cli" or "mcp"
+  mcp_url: "http://localhost:3000"
+
+bscscan:
+  rate_limit_delay_ms: 250        # 4 req/s (free tier limit: 5/s)
