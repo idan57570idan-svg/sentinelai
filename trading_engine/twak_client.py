@@ -142,8 +142,30 @@ def execute_swap(
 ) -> SwapResult:
     """
     Execute a token swap via TWAK.
-    dry_run=True simulates without sending the transaction.
+    dry_run=True (or DRY_RUN=true env var) returns a simulated SwapResult
+    without calling the TWAK CLI or MCP — no gas, no on-chain state change.
     """
+    _dry = dry_run or os.getenv("DRY_RUN", "false").strip().lower() == "true"
+
+    if _dry:
+        # Simulate: apply slippage, estimate 0.1% fee, return fake tx hash
+        simulated_out = amount_usd * (1 - slippage_pct / 100) * 0.999
+        sim_hash = f"0xDRYRUN{'0'*56}{int(time.time()) % 10000:04d}"
+        print(
+            f"[TWAK DRY-RUN] SIMULATED swap {from_symbol} -> {to_symbol} "
+            f"${amount_usd:.2f} | out≈${simulated_out:.2f} | "
+            f"slippage={slippage_pct}% | tx={sim_hash}"
+        )
+        return SwapResult(
+            success    = True,
+            tx_hash    = sim_hash,
+            amount_in  = amount_usd,
+            amount_out = simulated_out,
+            fee_usd    = amount_usd * 0.001,
+            gas_used   = 150000,
+            error      = None,
+        )
+
     cli_args = [
         "trade", "swap",
         "--from", from_symbol,
@@ -151,15 +173,11 @@ def execute_swap(
         "--amount", str(amount_usd),
         "--slippage", str(slippage_pct),
     ]
-    if dry_run:
-        cli_args.append("--dry-run")
-
     mcp_params = {
         "from_token": from_symbol,
         "to_token": to_symbol,
         "amount_usd": amount_usd,
         "slippage": slippage_pct,
-        "dry_run": dry_run,
     }
 
     raw = _call("trade_swap", cli_args, mcp_params)
